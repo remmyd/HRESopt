@@ -36,25 +36,16 @@ def gen_timeseries(location_file, location_data, demand_file, wind_turbine_file,
 
     time_dif = float(location_data.loc['Time difference'])
     wind_data = pd.read_excel(location_file, sheet_name='Wind Generation input', index_col=0, usecols=lambda x: x not in ['Unit'])
-    # wind_data = pd.read_excel(location_file, sheet_name='Wind Generation input', index_col=0, header = None)[1]
     wind_height = wind_data.loc['height']
 
-    #output = pd.DataFrame(columns = pd.MultiIndex(levels=[[]]*2, names=('number', 'color')))
     output = pd.DataFrame(columns = [['type'], ['number']])
     cols_to_use = ['Power (W)'] 
     df_demand = pd.read_csv(demand_file, usecols=cols_to_use, sep = ',').divide(1000) #demand is given in W but code works in kW
     output['Demand','1'] = df_demand['Power (W)']
     output["Solar",'1'] = get_local_time(get_solar_generation_from_RN(location_file,location_data,gen_year),time_difference = time_dif)
-#    output[["Wind"]] = get_local_time(get_wind_data_from_RN(location_file,location_data,gen_year),time_difference = time_dif)['electricity']
     wind_speed = get_local_time(get_wind_data_from_RN(location_file,location_data,gen_year),time_difference = time_dif)['wind_speed']
     output['Wind Speed', str(wind_height[1])+'m'] = wind_speed
-############# Test without generating wind profile ##############
-    # wind_speed_file = "inputs/timeseries/wind_speed_Jocotan.csv"
-    # df_wind_speed = pd.read_csv(wind_speed_file, header=[0,1])
-    # df_wind_speed.index = df_wind_speed.index + 1
-    # wind_speed = df_wind_speed["wind_speed"]["30"]
-#####################################################################
-    
+        
     for wt in wind_data:
         output['Wind',wt] = get_wind_generation_from_windpowerlib(wind_speed, wind_data[wt], wind_turbine_file).divide(1000)    
     output.index += 1
@@ -160,9 +151,6 @@ def get_wind_data_from_RN(location_file, location_data, year=2014):
         'turbine': 'XANT M21 100',
         'format': 'json',
         'raw'   :  True
-#   Metadata and raw data now supported by different function in API
-#            'metadata': False,
-#            'raw': False
     }        
     r = s.get(url, params=args)
     
@@ -205,19 +193,9 @@ def get_wind_generation_from_windpowerlib(wind_speed, wind_data, wind_turbine_fi
     mc_turbine = ModelChain(turbine).run_model(weather)
     return mc_turbine.power_output
     
-"""        
-    def solar_degradation(self):
-        lifetime = self.input_data.loc['lifetime']
-        hourly_degradation = 0.20/(lifetime * 365 * 24)
-        lifetime_degradation = []
-        for i in range((20*365*24)+1):
-            equiv = 1.0 - i * hourly_degradation
-            lifetime_degradation.append(equiv)
-        return pd.DataFrame(lifetime_degradation) 
-"""
 if __name__ == '__main__':
-    location = 'Jocotan2'
-    code_filepath = '/Users/redi/Workspace/test'
+    location = 'Ixchil'
+    code_filepath = '/Users/diane/Workspace/HRESopt'
     timeseries_filepath = code_filepath + '/inputs/timeseries/'
     location_filepath = code_filepath + '/inputs/Locations/'
     location_file = location_filepath + location +'.xlsx'
@@ -225,5 +203,4 @@ if __name__ == '__main__':
     demand_file = location_data.loc['demand_profile']
     wind_turbine_file = code_filepath + '/inputs/supply_small_wind_turbine_library.csv'
     
-
     gen_timeseries(location_file, location_data, demand_file, wind_turbine_file, location_data.loc['year'])

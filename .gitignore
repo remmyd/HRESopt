@@ -1,0 +1,11 @@
+# Ignore all files in the 'results' subfolder.
+/results/
+
+# Ignore all files in the 'inputs' subfolder.
+/results/
+
+# Ignore all files with the specified name.
+# Scope is all repo folders.
+analyse_timeseries.ipynb
+
+
